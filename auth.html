@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLIP & MATCH — Authentication</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Creepster&family=Pirata+One&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--shadow);
+            margin: 0;
+            overflow-x: hidden;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .main-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+
+        .left-panel {
+            display: none; /* Hidden on mobile */
+            flex: 1;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            background: linear-gradient(to right, rgba(0,0,0,0.8), transparent);
+            border-right: 1px solid rgba(139, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-wrapper {
+            width: 100%;
+            max-width: 420px;
+            padding: 10px;
+        }
+
+        @media (min-width: 992px) {
+            .left-panel {
+                display: flex;
+            }
+        }
+
+        /* Cinematic Left Panel Content */
+        .brand-section {
+            animation: fadeIn 1.5s ease;
+        }
+
+        .brand-title {
+            font-family: 'Creepster', cursive;
+            font-size: 5rem;
+            color: var(--blood);
+            line-height: 1;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(139, 0, 0, 0.6);
+        }
+
+        .brand-lore {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: var(--bone-dim);
+            max-width: 500px;
+            line-height: 1.6;
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        .brand-stats {
+            margin-top: 40px;
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-val {
+            font-family: 'Pirata One', cursive;
+            font-size: 2rem;
+            color: var(--gold);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--ash);
+        }
+
+        .auth-card {
+            background: rgba(10, 2, 4, 0.85);
+            border: 1px solid var(--blood);
+            border-radius: 24px;
+            padding: 25px 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 0, 0, 0.2);
+            text-align: center;
+            animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .auth-logo {
+            font-family: 'Creepster', cursive;
+            font-size: 2.5rem;
+            color: var(--blood);
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(139, 0, 0, 0.6);
+        }
+
+        .auth-subtitle {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            color: var(--bone-dim);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 0.6rem;
+            color: var(--gold-dim);
+            margin-bottom: 8px;
+            letter-spacing: 0.1em;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(139, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: var(--bone);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--blood-bright);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+        }
+
+        .auth-btn-main {
+            width: 100%;
+            padding: 14px;
+            margin-top: 5px;
+            font-family: 'Cinzel Decorative', serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
+            background: linear-gradient(135deg, #8b0000 0%, #450000 100%);
+            color: var(--bone);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(139, 0, 0, 0.3);
+        }
+
+        .auth-btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(139, 0, 0, 0.5);
+            filter: brightness(1.2);
+        }
+
+        .auth-switch {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: var(--ash);
+        }
+
+        .auth-link {
+            color: var(--blood-bright);
+            text-decoration: none;
+            font-family: 'Cinzel Decorative', serif;
+            margin-left: 5px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .auth-link:hover {
+            color: var(--gold);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--ash);
+            text-decoration: none;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--bone);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 22px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--ash);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 5px;
+        }
+
+        .error-msg {
+            display: none;
+            color: var(--blood-bright);
+            font-size: 0.6rem;
+            margin-top: 5px;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .form-group.invalid .error-msg {
+            display: block;
+        }
+
+        .form-group.invalid .auth-input {
+            border-color: var(--blood-bright);
+            background: rgba(139, 0, 0, 0.1);
+        }
+
+        /* Decorative elements */
+        .bg-pentagram {
+            position: fixed;
+            font-size: 40rem;
+            color: var(--blood);
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            animation: rotate 60s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pentagram">⛧</div>
+    <div class="drops" id="drops"></div>
+    
+    <div class="main-container">
+        <!-- LEFT PANEL: Brand & Cinematic Content -->
+        <div class="left-panel">
+            <div class="brand-section">
+                <div class="brand-title">FLIP & MATCH</div>
+                <p class="brand-lore">
+                    In the shadows of the Philippine archipelago, ancient spirits await. 
+                    Test your memory against the Kapre, the Manananggal, and the Tikbalang. 
+                    Only those with the strongest will shall survive the abyss.
+                </p>
+                
+                <div class="brand-stats">
+                    <div class="stat-item">
+                        <span class="stat-val">5</span>
+                        <span class="stat-label">Stages of Terror</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val">∞</span>
+                        <span class="stat-label">Ancient Curses</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Authentication -->
+        <div class="right-panel">
+            <div class="auth-wrapper">
+        <!-- LOGIN PANEL -->
+        <form id="loginPanel" class="auth-card" style="display: none;" onsubmit="handleLoginAction(event)">
+            <div class="auth-logo">Flip & Match</div>
+            <div class="auth-subtitle">Enter the Darkness</div>
+            
+            <div class="form-group">
+                <label class="form-label">Username or Email <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="text" id="loginIdentifier" class="auth-input" placeholder="Your identity..." required>
+                </div>
+                <span class="error-msg">This field is required warrior!</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
+                    <button type="button" class="toggle-password" onclick="togglePass('loginPassword', this)">👁️</button>
+                </div>
+                <span class="error-msg">Speak the secret word! (Required)</span>
+            </div>
+            
+            <div class="form-group" style="margin-top: -10px; margin-bottom: 25px;">
+                <span class="auth-link" style="font-size: 0.65rem; opacity: 0.8;" onclick="handleForgotPass()">Forgot Password?</span>
+            </div>
+            
+            <button type="submit" class="auth-btn-main">Login to Battle</button>
+            
+            <div class="auth-switch">
+                New to the abyss? <span class="auth-link" onclick="toggleAuth('register')">Create Account</span>
+            </div>
+        </form>
+
+        <!-- REGISTER PANEL -->
+        <form id="registerPanel" class="auth-card" onsubmit="handleRegisterAction(event)">
+            <div class="auth-logo">Join Us</div>
+            <div class="auth-subtitle">Forge your Destiny</div>
+            
+            <div class="form-group">
+                <label class="form-label">Username <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="text" id="regUsername" class="auth-input" placeholder="Enter your Name" required>
+                </div>
+                <span class="error-msg">You must have a name to survive.</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Email Address <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="email" id="regEmail" class="auth-input" placeholder="soul@abyss.com" required>
+                </div>
+                <span class="error-msg">A soul needs an email address.</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="password" id="regPassword" class="auth-input" placeholder="••••••••" required>
+                    <button type="button" class="toggle-password" onclick="togglePass('regPassword', this)">👁️</button>
+                </div>
+                <div id="pwRequirements" style="font-size: 0.55rem; color: var(--ash); margin-top: 5px; line-height: 1.4;">
+                    Must include: <span id="reqCap">Capital</span>, <span id="reqNum">Number</span>, <span id="reqSym">Symbol</span>
+                </div>
+                <span class="error-msg">Password is required!</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Confirm Password <span style="color:var(--blood-bright)">*</span></label>
+                <div class="input-container">
+                    <input type="password" id="regPasswordConfirm" class="auth-input" placeholder="••••••••" required>
+                    <button type="button" class="toggle-password" onclick="togglePass('regPasswordConfirm', this)">👁️</button>
+                </div>
+                <span class="error-msg">Please confirm your password.</span>
+            </div>
+            
+            <button type="submit" class="auth-btn-main">Begin Journey</button>
+            
+            <div class="auth-switch">
+                Already a warrior? <span class="auth-link" onclick="toggleAuth('login')">Login</span>
+            </div>
+        </form>
+            </div> <!-- End of auth-wrapper -->
+        </div> <!-- End of right-panel -->
+    </div> <!-- End of main-container -->
+
+    <script src="api.js"></script>
+    <script>
+        function toggleAuth(mode) {
+            const login = document.getElementById('loginPanel');
+            const register = document.getElementById('registerPanel');
+            
+            if (mode === 'register') {
+                login.style.display = 'none';
+                register.style.display = 'block';
+            } else {
+                login.style.display = 'block';
+                register.style.display = 'none';
+            }
+        }
+
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        async function handleLoginAction(e) {
+            if (e) e.preventDefault();
+            
+            // Clear previous errors
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('invalid'));
+
+            const id = document.getElementById('loginIdentifier').value;
+            const pass = document.getElementById('loginPassword').value;
+            
+            let hasError = false;
+            if (!id) {
+                document.getElementById('loginIdentifier').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+            if (!pass) {
+                document.getElementById('loginPassword').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+
+            if (hasError) return;
+            
+            const btn = document.querySelector('#loginPanel .auth-btn-main');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            
+            const result = await gameAPI.login(id, pass);
+            
+            if (result.success) {
+                // Clear old game data to ensure fresh start for new user
+                localStorage.removeItem('flipmatch_progress');
+                localStorage.removeItem('flipmatch_stats');
+                localStorage.removeItem('flipmatch_inventory');
+                window.location.href = 'index.html';
+            } else {
+                alert(result.error);
+                btn.disabled = false;
+                btn.textContent = 'Login to Battle';
+            }
+        }
+
+        async function handleRegisterAction(e) {
+            if (e) e.preventDefault();
+
+            // Clear previous errors
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('invalid'));
+
+            const user = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPassword').value;
+            const confirmPass = document.getElementById('regPasswordConfirm').value;
+            
+            let hasError = false;
+            if (!user) {
+                document.getElementById('regUsername').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+            if (!email) {
+                document.getElementById('regEmail').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+            if (!pass) {
+                document.getElementById('regPassword').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+            if (!confirmPass) {
+                document.getElementById('regPasswordConfirm').closest('.form-group').classList.add('invalid');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            if (pass !== confirmPass) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            // Security Validation
+            const hasCap = /[A-Z]/.test(pass);
+            const hasNum = /[0-9]/.test(pass);
+            const hasSym = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
+
+            if (!hasCap || !hasNum || !hasSym) {
+                alert('Password must contain at least one capital letter, one number, and one symbol.');
+                return;
+            }
+            
+            const btn = document.querySelector('#registerPanel .auth-btn-main');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            
+            const result = await gameAPI.register(user, email, pass);
+            
+            if (result.success) {
+                // Clear old game data for new warrior
+                localStorage.removeItem('flipmatch_progress');
+                localStorage.removeItem('flipmatch_stats');
+                localStorage.removeItem('flipmatch_inventory');
+                
+                alert('Registration successful! Please login to start your journey.');
+                btn.disabled = false;
+                btn.textContent = 'Begin Journey';
+                toggleAuth('login');
+            } else {
+                alert(result.error);
+                btn.disabled = false;
+                btn.textContent = 'Begin Journey';
+            }
+        }
+
+        function handleForgotPass() {
+            alert('To reset your password, please contact the game administrator or check your recovery email for instructions.');
+        }
+
+        // Real-time validation feedback
+        document.getElementById('regPassword').addEventListener('input', function(e) {
+            const v = e.target.value;
+            document.getElementById('reqCap').style.color = /[A-Z]/.test(v) ? '#2ecc71' : 'var(--ash)';
+            document.getElementById('reqNum').style.color = /[0-9]/.test(v) ? '#2ecc71' : 'var(--ash)';
+            document.getElementById('reqSym').style.color = /[!@#$%^&*(),.?":{}|<>]/.test(v) ? '#2ecc71' : 'var(--ash)';
+        });
+
+        // Auto redirect if already logged in
+        if (gameAPI.isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        // Atmospheric Drops
+        function spawnDrops(){
+            const c=document.getElementById('drops');
+            if (!c) return;
+            c.innerHTML = '';
+            const syms=['🩸','·','∘','⛧','✦','*','♱'];
+            for(let i=0;i<35;i++){
+                const d=document.createElement('div');
+                d.className='drop'; d.textContent=syms[Math.floor(Math.random()*syms.length)];
+                d.style.left=Math.random()*100+'vw';
+                d.style.fontSize=(0.4+Math.random()*0.9)+'rem';
+                d.style.animationDuration=(12+Math.random()*18)+'s';
+                d.style.animationDelay='-'+(Math.random()*15)+'s';
+                const colors = ['rgba(180,0,0,0.4)', 'rgba(220,50,50,0.3)', 'rgba(120,120,120,0.3)'];
+                d.style.color=colors[Math.floor(Math.random()*colors.length)];
+                c.appendChild(d);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', spawnDrops);
+    </script>
+</body>
+</html>

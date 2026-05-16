@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- ── Mobile Web Architecture ───────────────────── -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <!-- ── iOS PWA meta ───────────────────────────────── -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flip &amp; Match">
+  <!-- ── Theme / Brand ─────────────────────────────── -->
+  <meta name="theme-color" content="#8b0000">
+  <meta name="msapplication-TileColor" content="#8b0000">
+  <meta name="msapplication-TileImage" content="icons/icon-144.png">
+  <meta name="application-name" content="Flip &amp; Match">
+  <!-- ── SEO / Social ───────────────────────────────── -->
+  <title>FLIP & MATCH — Horror Battle</title>
+  <meta name="description"
+    content="Filipino Horror Memory Battle Game — Turn-based combat, AI opponent, 5 stages of terror.">
+  <meta property="og:title" content="FLIP &amp; MATCH — Horror Battle">
+  <meta property="og:description" content="Filipino Horror Memory Battle. Fight the darkness!">
+  <meta property="og:image" content="icons/icon-512.png">
+  <meta property="og:type" content="website">
+  <!-- ── PWA Manifest ───────────────────────────────── -->
+  <link rel="manifest" href="manifest.json">
+  <!-- ── Apple Touch Icons (iOS Home Screen) ────────── -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="icons/icon-72.png">
+  <link rel="apple-touch-icon" sizes="96x96" href="icons/icon-96.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+  <!-- ── Favicon ────────────────────────────────────── -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-96.png">
+  <link rel="shortcut icon" href="icons/icon-96.png">
+  <!-- ── Styles & Fonts ─────────────────────────────── -->
+  <link rel="stylesheet" href="style.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Nosifer&family=Crimson+Text:wght@400;600&family=Metal+Mania&family=Creepster&family=Pirata+One&family=UnifrakturMaguntia&family=Outfit:wght@300;400;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="drops" id="drops"></div>
+  <div class="hit-flash" id="hitFlash"></div>
+
+  <div id="jumpscare">
+    <div id="scareInner">
+      <svg id="scareSVG" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="scareText"></div>
+    </div>
+  </div>
+
+  <!-- TITLE SCREEN -->
+  <div class="screen active" id="titleScreen">
+    <div class="title-bg-art">⛧</div>
+    <div class="title-content">
+      <div id="authStatusHeader" class="auth-status-header" style="margin-bottom: 10px;">
+        <div id="loggedInState" class="user-profile-badge" style="display:none; padding: 8px 0;">
+          <div class="user-badge-content">
+            <div class="user-badge-avatar" style="font-size: 1.2rem;">👤</div>
+            <div class="user-badge-info">
+              <span class="user-badge-name" id="displayUsername" style="font-size: 0.75rem;">Warrior</span>
+              <span class="user-badge-tag" style="font-size: 0.5rem;">Survivor of the Abyss</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="title-eyebrow">⛧ FLIP & MATCH ⛧</p>
+      <h1 class="game-title">Match to Survive</h1>
+      <p class="title-sub">Filipino Horror Battle Memory · Fight the Darkness</p>
+      <div class="title-divider"></div>
+
+      <p class="title-story">
+        The creatures of the night are waiting for you. Test your memory,
+        fight the enemy, and survive the endless darkness…
+      </p>
+
+      <div class="title-stats-bar" id="titleStatsBar">
+        <div class="ts-item">
+          <span class="ts-val" id="tsLevel">1</span> LEVEL
+        </div>
+        <div class="ts-item">
+          <span class="ts-val" id="tsXP">0</span> XP
+        </div>
+        <div class="ts-item">
+          <span class="ts-val" id="tsWins">0</span> WINS
+        </div>
+        <div class="ts-item">
+          <span class="ts-val" id="tsBestCombo">0</span> BEST COMBO
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════ -->
+      <!-- STAGE SELECTION - Optimized Grid -->
+      <!-- ════════════════════════════════════════════ -->
+      <div class="stage-section">
+        <div class="section-header">
+          <h2 class="section-title">SELECT STAGE</h2>
+        </div>
+        <div class="stage-select-grid" id="stageGrid"></div>
+      </div>
+
+      <!-- ACTION BUTTONS - Hamburger Menu for Mobile -->
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="action-footer" id="actionFooter">
+        <div class="action-buttons-row">
+          <button class="btn-secondary footer-btn" onclick="openPanel(); closeMobileMenu();">📜 Achievements</button>
+          <button class="btn-secondary footer-btn" id="titleMusicBtn" onclick="toggleMusic()">🔇 Music</button>
+          <button class="btn-secondary footer-btn" onclick="resetProgress(); closeMobileMenu();">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="screen" id="gameScreen">
+
+    <div class="stage-banner">
+      <div class="stage-banner-title" id="stageBannerTitle">Stage 1</div>
+      <div class="stage-banner-name" id="stageBannerName">The Dark Night</div>
+    </div>
+
+    <div class="battle-hud">
+      <div class="fighter player">
+        <div class="fighter-name" id="playerName">PLAYER</div>
+        <div class="fighter-avatar" id="playerAvatar">
+          <img src="player.jpg" alt="Player"
+            style="object-fit:cover;border-radius:12px;border:2px solid var(--player-clr);image-rendering:pixelated;display:block;">
+        </div>
+        <div class="hp-track">
+          <div class="hp-fill" id="playerFill" style="width:100%"></div>
+        </div>
+        <div class="hp-row">
+          <span class="hp-cur" id="playerHpNum">100</span>
+          <span class="hp-max" id="playerHpMax">/ 100</span>
+        </div>
+        <div class="fighter-buffs" id="playerBuffs"></div>
+        <div class="combo-badge" id="comboBadge">🔥 x1</div>
+      </div>
+
+      <div class="vs-col">
+        <div class="vs-badge">VS</div>
+      </div>
+
+      <div class="fighter enemy">
+        <div class="fighter-name" id="aiName">BOT</div>
+        <div class="fighter-avatar" id="aiAvatar">
+          <img id="aiAvatarImg" src="enemy.png" alt="Enemy"
+            style="object-fit:cover;border-radius:12px;border:2px solid var(--ai-clr);image-rendering:pixelated;display:block;">
+        </div>
+        <div class="hp-track">
+          <div class="hp-fill" id="aiFill" style="width:100%"></div>
+        </div>
+        <div class="hp-row">
+          <span class="hp-cur" id="aiHpNum">100</span>
+          <span class="hp-max" id="aiHpMax">/ 100</span>
+        </div>
+
+        <div class="fighter-buffs" id="aiBuffs" style="justify-content:center"></div>
+        <div class="combo-badge" style="visibility:hidden; pointer-events:none;">🔥 x1</div>
+      </div>
+    </div>
+
+    <div class="hud-strip">
+      <div class="hud-pill">
+        <div class="hud-val" id="movesDisplay">0</div>
+        <div class="hud-label">Moves</div>
+      </div>
+      <div class="hud-pill">
+        <div class="hud-val" id="pairsDisplay">0/0</div>
+        <div class="hud-label">Pairs</div>
+      </div>
+      <div class="hud-pill" id="timerPill">
+        <div class="hud-val" id="timerDisplay">--</div>
+        <div class="hud-label">Time</div>
+      </div>
+      <div class="hud-pill">
+        <div class="hud-val" id="scoreDisplay">0</div>
+        <div class="hud-label">Score</div>
+      </div>
+      <div class="hud-pill">
+        <div class="hud-val" id="stageDisplay">1</div>
+        <div class="hud-label">Stage</div>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-secondary" onclick="showScreen('titleScreen')">🏠 Menu</button>
+      <button class="btn-secondary" onclick="restartStage()">↺ Restart</button>
+      <button class="btn-secondary" onclick="openPanel()">🎒 Bag</button>
+      <button class="btn-secondary" id="musicBtnGame" onclick="toggleMusic()">🔇</button>
+    </div>
+  </div>
+
+  <!-- WIN OVERLAY -->
+  <div class="full-overlay" id="winOverlay">
+    <div class="ov-emoji">🏆</div>
+    <h2 class="ov-title win" id="winTitle">You Survived!</h2>
+    <p class="ov-subtitle" id="winSubtitle">You defeated the darkness tonight…</p>
+    <div class="ov-stats" id="winStats"></div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:80%;max-width:360px;">
+      <div class="xp-label" id="xpLabel">XP +0 → Level 1</div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="ov-actions">
+      <button class="btn-primary" id="nextStageBtn" onclick="goNextStage()">Next Stage →</button>
+      <button class="btn-secondary" onclick="restartStage()">↺ Restart</button>
+      <button class="btn-secondary" onclick="showScreen('titleScreen')">🏠 Menu</button>
+    </div>
+  </div>
+
+  <!-- LOSE OVERLAY -->
+  <div class="full-overlay" id="loseOverlay">
+    <div class="ov-emoji">💀</div>
+    <h2 class="ov-title lose">You Lost…</h2>
+    <p class="ov-subtitle" id="loseSubtitle">The darkness consumed you. The creatures have won…</p>
+    <div class="ov-stats" id="loseStats"></div>
+
+    <div class="ov-actions">
+      <button class="btn-primary" onclick="restartStage()">↺ Try Again</button>
+      <button class="btn-secondary" onclick="showScreen('titleScreen')">🏠 Menu</button>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel" id="sidePanel">
+    <div class="sp-title">📜 Achievements</div>
+
+    <div class="inventory-grid" id="inventoryGrid"></div>
+
+    <div class="achievement-list" id="achievementList"></div>
+
+    <div class="sp-section-label" style="margin-top:6px;">📊 Dashboard</div>
+    <div class="dashboard-side" id="dashboardSide">
+      <div class="loading">Loading stats...</div>
+    </div>
+
+    <div class="sp-section-label" style="margin-top:8px;">📜 Battle Archives</div>
+    <div class="history-side-list" id="historySideList">
+      <div class="loading">Invoking past memories...</div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:8px;display:flex;flex-direction:column;gap:6px;">
+      <button class="btn-secondary" style="width:100%; border-color: rgba(139,0,0,0.5); color: var(--blood-bright); padding: 8px 12px;"
+        onclick="handleLogoutAction()">🚪 Logout Account</button>
+      <button class="btn-secondary" style="width:100%; padding: 8px 12px;" onclick="closePanel()">✕ Close</button>
+    </div>
+  </div>
+
+  <!-- FULL HISTORY MODAL -->
+  <div class="full-overlay" id="historyOverlay">
+    <div class="ov-emoji">📜</div>
+    <h2 class="ov-title win">Match History</h2>
+    <p class="ov-subtitle">Your past battles against the darkness</p>
+
+    <div class="history-container" id="historyList">
+      <div class="loading">Loading history...</div>
+    </div>
+
+    <div class="ov-actions">
+      <button class="btn-secondary" onclick="closeHistory()">Close</button>
+    </div>
+  </div>
+
+  <!-- ══ PWA: Offline indicator bar ══ -->
+  <div id="offlineBar" style="
+  display:none;position:fixed;top:0;left:0;right:0;z-index:1100;
+  background:rgba(30,10,0,0.97);border-bottom:1px solid #ff6600;
+  padding:8px 16px;text-align:center;
+  font-family:'Cinzel Decorative',serif;font-size:0.6rem;
+  color:#ff9944;letter-spacing:0.1em;text-transform:uppercase;">
+    📵 Offline Mode — Game saves to your device automatically
+  </div>
+
+  <!-- ══ PWA: Update available toast ══ -->
+  <div id="updateToast" onclick="pwaApplyUpdate()" style="
+  display:none;position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:1100;
+  background:rgba(0,50,20,0.97);border:1px solid #2ecc71;border-radius:8px;
+  padding:10px 20px;font-family:'Cinzel Decorative',serif;font-size:0.58rem;
+  color:#2ecc71;letter-spacing:0.08em;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;box-shadow:0 4px 20px rgba(46,204,113,0.3);">
+    🔄 New version available — Tap to update
+  </div>
+
+  <!-- ══ PWA: Install prompt banner ══ -->
+  <div id="installBanner" style="
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:1100;
+  background:rgba(8,2,3,0.98);border-top:2px solid #8b0000;
+  padding:14px 18px;
+  flex-direction:row;align-items:center;gap:14px;
+  box-shadow:0 -8px 32px rgba(139,0,0,0.5);">
+    <span style="font-size:2rem;flex-shrink:0">⛧</span>
+    <div style="flex:1">
+      <strong
+        style="display:block;font-family:'Cinzel Decorative',serif;font-size:0.68rem;color:#e8d5b0;margin-bottom:2px;">
+        Install FLIP &amp; MATCH
+      </strong>
+      <span style="font-size:0.72rem;color:#6a5a5a;font-style:italic;">
+        Download to your device — play offline anytime!
+      </span>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="pwaInstall()" style="
+      font-family:'Cinzel Decorative',serif;font-size:0.58rem;padding:8px 14px;
+      border-radius:4px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;
+      background:#8b0000;border:1px solid #c0392b;color:#e8d5b0;transition:all 0.2s;">
+        Install
+      </button>
+      <button onclick="pwaDismissInstall()" style="
+      font-family:'Cinzel Decorative',serif;font-size:0.58rem;padding:8px 12px;
+      border-radius:4px;cursor:pointer;background:transparent;
+      border:1px solid rgba(255,255,255,0.15);color:#6a5a5a;">✕</button>
+    </div>
+  </div>
+
+  <script src="api.js?v=2"></script>
+  <script>
+    // Mandatory Auth Check: Redirect to auth.html if not logged in
+    if (!gameAPI.isAuthenticated()) {
+      window.location.href = 'auth.html';
+    }
+  </script>
+  <script src="script.js?v=7"></script>
+  <script src="pwa.js?v=1"></script>
+</body>
+
+</html>
