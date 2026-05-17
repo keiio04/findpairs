@@ -33,6 +33,7 @@
             text-align: center;
         }
 
+        /* ══ Background Effects ══ */
         .vignette {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -56,6 +57,7 @@
             to { transform: rotate(360deg); }
         }
 
+        /* ══ Content Wrapper ══ */
         .content {
             position: relative;
             z-index: 10;
@@ -68,8 +70,8 @@
             font-family: 'Cinzel Decorative', serif;
             font-size: clamp(2.5rem, 8vw, 4.5rem);
             font-weight: 900;
-            color: var(--blood);
-            text-shadow: 0 0 30px rgba(139, 0, 0, 0.9), 0 0 60px rgba(255, 68, 68, 0.3);
+            color: var(--gold);
+            text-shadow: 0 0 30px rgba(139, 0, 0, 0.8), 0 0 60px rgba(255, 204, 51, 0.2);
             margin-bottom: 10px;
             letter-spacing: 0.1em;
             text-transform: uppercase;
@@ -94,6 +96,7 @@
             opacity: 0.7;
         }
 
+        /* ══ Main Button ══ */
         .enter-btn {
             display: inline-block;
             padding: 18px 45px;
@@ -120,11 +123,16 @@
             color: #fff;
         }
 
+        .enter-btn:active {
+            transform: scale(0.98);
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ══ Footer ══ */
         footer {
             position: fixed;
             bottom: 20px;
@@ -135,6 +143,7 @@
             text-transform: uppercase;
         }
 
+        /* ══ PWA: Offline indicator bar ══ */
         #offlineBar {
             display:none; position:fixed; top:0; left:0; right:0; z-index:1100;
             background:rgba(30,10,0,0.97); border-bottom:1px solid #ff6600;
@@ -142,28 +151,12 @@
             font-family:'Cinzel Decorative',serif; font-size:0.6rem;
             color:#ff9944; letter-spacing:0.1em; text-transform:uppercase;
         }
-
-        /* Drops / Particles */
-        .drops {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 1; overflow: hidden;
-        }
-        .drop {
-            position: absolute; top: -20px;
-            animation: fall linear infinite;
-            opacity: 0.6; font-family: 'Cinzel Decorative', serif;
-        }
-        @keyframes fall {
-            0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.8; }
-            90% { opacity: 0.8; }
-            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
-        }
     </style>
 </head>
 <body>
+    <!-- PWA Offline Bar -->
     <div id="offlineBar">Offline Mode — Game saves to your device automatically</div>
-    <div class="drops" id="drops"></div>
+
     <div class="vignette"></div>
     <div class="bg-pentagram">⛧</div>
 
@@ -177,48 +170,12 @@
             that lurks within the ancient folklore."
         </p>
 
-        <!-- Redirects to auth.html -->
         <a href="auth.html" class="enter-btn">Begin Journey</a>
     </div>
 
-    <footer>ITEL 305 — TECHNICAL PROJECT DEFENSE ⛧ 2026<br>Crisostomo · Guevarra · Lacopia</footer>
+    <footer>ITEL 305 — Technical Project Defense ⛧ 2026</footer>
 
+    <!-- PWA Scripts for Offline Awareness -->
     <script src="pwa.js?v=1"></script>
-    <script>
-        function spawnDrops() {
-            const c = document.getElementById('drops');
-            if (!c) return;
-            c.innerHTML = '';
-            const syms = ['🩸', '·', '∘', '⛧', '✦', '*', '♱'];
-            for (let i = 0; i < 35; i++) {
-                const d = document.createElement('div');
-                d.className = 'drop'; d.textContent = syms[Math.floor(Math.random() * syms.length)];
-                d.style.left = Math.random() * 100 + 'vw';
-                d.style.fontSize = (0.4 + Math.random() * 0.9) + 'rem';
-                d.style.animationDuration = (12 + Math.random() * 18) + 's';
-                d.style.animationDelay = '-' + (Math.random() * 15) + 's';
-                const colors = ['rgba(180,0,0,0.4)', 'rgba(220,50,50,0.3)', 'rgba(120,120,120,0.3)'];
-                d.style.color = colors[Math.floor(Math.random() * colors.length)];
-                c.appendChild(d);
-            }
-        }
-        window.addEventListener('DOMContentLoaded', spawnDrops);
-
-        // Welcome Music Logic
-        const welcomeMusic = new Audio('audio/welcome.mp3');
-        welcomeMusic.loop = true;
-        welcomeMusic.volume = 0.5;
-        
-        // Subukang i-autoplay agad
-        let playPromise = welcomeMusic.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Kung na-block ng browser ang autoplay, maghihintay siya ng kahit anong click sa screen
-                document.body.addEventListener('click', () => {
-                    welcomeMusic.play().catch(e => console.log(e));
-                }, { once: true });
-            });
-        }
-    </script>
 </body>
 </html>

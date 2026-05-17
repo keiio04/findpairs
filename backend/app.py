@@ -119,6 +119,9 @@ def register():
     password_hash = hash_password(password)
     user_id = user_model.create(username, email, password_hash)
     
+    if user_id:
+        print(f"\n[SUCCESS] New user registered locally: {username} (ID: {user_id})")
+    
     if not user_id:
         return jsonify({'error': 'Failed to create user'}), 500
     
@@ -154,6 +157,9 @@ def login():
     
     if not user or not verify_password(password, user['password_hash']):
         return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Update last login
+    user_model.update_last_login(user['id'])
     
     # Generate token
     access_token = create_access_token(identity=str(user['id']))

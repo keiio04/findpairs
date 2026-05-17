@@ -4,6 +4,7 @@ Database Models for Flip & Match
 
 import sqlite3
 from datetime import datetime
+from auth import encrypt_data, decrypt_data
 
 class Database:
     """Database handler for Flip & Match"""
@@ -18,11 +19,17 @@ class Database:
         return conn
     
     def init_db(self):
-        """Initialize all database tables"""
+        """Initialize all database tables with improved organization"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # Users table
+        # Enable foreign keys
+        cursor.execute('PRAGMA foreign_keys = ON')
+        
+        # Cleanup: Drop legacy tables if they exist
+        cursor.execute('DROP TABLE IF EXISTS leaderboard_stats')
+        
+        # 1. Users table (Core user information and aggregate stats)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,22 +37,29 @@ class Database:
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP,
+                is_active INTEGER DEFAULT 1,
+                
+                -- Aggregate Statistics
                 total_score INTEGER DEFAULT 0,
                 total_wins INTEGER DEFAULT 0,
                 total_games INTEGER DEFAULT 0,
                 best_combo INTEGER DEFAULT 0,
-                highest_stage INTEGER DEFAULT 1
+                highest_stage INTEGER DEFAULT 1,
+                
+                -- Account Settings (JSON string)
+                settings TEXT DEFAULT '{}'
             )
         ''')
         
-        # Game history table
+        # 2. Game history table (Detailed match records)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS game_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 stage_id INTEGER NOT NULL,
                 stage_name TEXT NOT NULL,
-                result TEXT NOT NULL,
+                result TEXT NOT NULL, -- 'win' or 'lose'
                 moves INTEGER NOT NULL,
                 time_seconds INTEGER NOT NULL,
                 score INTEGER NOT NULL,
@@ -53,11 +67,11 @@ class Database:
                 damage_dealt INTEGER DEFAULT 0,
                 mistakes INTEGER DEFAULT 0,
                 played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
         
-        # User sessions table (for tracking active sessions)
+        # 3. User sessions table (Authentication persistence)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,13 +79,27 @@ class Database:
                 token_hash TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
         
+        # CREATE INDEXES for better organization and performance
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_game_history_user_id ON game_history(user_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_game_history_played_at ON game_history(played_at)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)')
+        
         conn.commit()
         conn.close()
-        print("Database initialized successfully!")
+        print("Database organized and initialized successfully!")
+
+    def list_tables(self):
+        """Debug method to list all tables in the database"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row['name'] for row in cursor.fetchall()]
+        conn.close()
+        return tables
 
 class UserModel:
     """User database operations"""
@@ -101,14 +129,30 @@ class UserModel:
         """Find user by username or email (Case-Insensitive)"""
         conn = self.db.get_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id, username, email, password_hash, total_score, total_wins, 
-                   total_games, best_combo, highest_stage, created_at
-            FROM users 
-            WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)
-        ''', (identifier, identifier))
+        try:
+            cursor.execute('''
+                SELECT * FROM users 
+                WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)
+            ''', (identifier, identifier))
+        except:
+             # Fallback if encryption fails or just standard query
+            cursor.execute('''
+                SELECT * FROM users 
+                WHERE LOWER(username) = LOWER(?) OR email = ?
+            ''', (identifier, identifier))
+            
         user = cursor.fetchone()
         conn.close()
+        
+        if user:
+            # Return as dictionary
+            user_dict = dict(user)
+            # Decrypt settings if present
+            if 'settings' in user_dict and user_dict['settings']:
+                from auth import decrypt_data
+                user_dict['settings'] = decrypt_data(user_dict['settings'])
+            return user_dict
+            
         return user
     
     def find_by_id(self, user_id):
@@ -117,11 +161,21 @@ class UserModel:
         cursor = conn.cursor()
         cursor.execute('''
             SELECT id, username, email, total_score, total_wins, total_games, 
-                   best_combo, highest_stage, created_at
+                   best_combo, highest_stage, created_at, last_login, is_active, settings
             FROM users WHERE id = ?
         ''', (user_id,))
         user = cursor.fetchone()
         conn.close()
+        
+        if user:
+            # Return as dictionary
+            user_dict = dict(user)
+            # Decrypt settings if present
+            if 'settings' in user_dict and user_dict['settings']:
+                from auth import decrypt_data
+                user_dict['settings'] = decrypt_data(user_dict['settings'])
+            return user_dict
+            
         return user
     
     def update_stats(self, user_id, score, is_win, combo_max, stage_id):
@@ -167,7 +221,28 @@ class UserModel:
         """Update user password"""
         conn = self.db.get_connection()
         cursor = conn.cursor()
-        cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+        cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (user_id, password_hash))
+        conn.commit()
+        conn.close()
+
+    def update_last_login(self, user_id):
+        """Update the last login timestamp"""
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user_id,))
+        conn.commit()
+        conn.close()
+
+    def update_settings(self, user_id, settings_dict):
+        """Update user settings (JSON) with AES-256 Encryption"""
+        import json
+        from auth import encrypt_data
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        settings_json = json.dumps(settings_dict)
+        # Encrypt the JSON string
+        encrypted_settings = encrypt_data(settings_json)
+        cursor.execute('UPDATE users SET settings = ? WHERE id = ?', (encrypted_settings, user_id))
         conn.commit()
         conn.close()
 
@@ -280,31 +355,43 @@ class StatsModel:
         self.db = db
     
     def get_global_stats(self):
-        """Get global game statistics"""
+        """Get organized global game statistics"""
         conn = self.db.get_connection()
         cursor = conn.cursor()
         
-        cursor.execute('SELECT COUNT(*) as total_users FROM users')
+        # Total Users
+        cursor.execute('SELECT COUNT(*) as total_users FROM users WHERE is_active = 1')
         total_users = cursor.fetchone()['total_users']
         
-        cursor.execute('SELECT COUNT(*) as total_games FROM game_history')
-        total_games = cursor.fetchone()['total_games']
+        # Game History Stats
+        cursor.execute('SELECT COUNT(*) as total_games, SUM(score) as total_score, AVG(score) as avg_score FROM game_history')
+        history_stats = cursor.fetchone()
+        total_games = history_stats['total_games'] or 0
+        total_score = history_stats['total_score'] or 0
+        avg_score = history_stats['avg_score'] or 0
         
-        cursor.execute('SELECT SUM(score) as total_score FROM game_history')
-        total_score = cursor.fetchone()['total_score'] or 0
+        # Combo Stats
+        cursor.execute('SELECT MAX(combo_max) as max_combo, AVG(combo_max) as avg_combo FROM game_history WHERE combo_max > 0')
+        combo_stats = cursor.fetchone()
+        max_combo = combo_stats['max_combo'] or 0
+        avg_combo = combo_stats['avg_combo'] or 0
         
-        cursor.execute('SELECT AVG(combo_max) as avg_combo FROM game_history WHERE combo_max > 0')
-        avg_combo = cursor.fetchone()['avg_combo'] or 0
-        
-        cursor.execute('SELECT AVG(score) as avg_score FROM game_history')
-        avg_score = cursor.fetchone()['avg_score'] or 0
+        # Today's activity
+        cursor.execute("SELECT COUNT(*) as games_today FROM game_history WHERE date(played_at) = date('now')")
+        games_today = cursor.fetchone()['games_today'] or 0
         
         conn.close()
         
         return {
-            'total_users': total_users,
-            'total_games': total_games,
-            'total_score': total_score,
-            'average_score': round(avg_score, 1),
-            'average_combo': round(avg_combo, 1)
+            'overview': {
+                'total_users': total_users,
+                'total_games': total_games,
+                'games_today': games_today
+            },
+            'performance': {
+                'total_score': total_score,
+                'average_score': round(avg_score, 1),
+                'max_combo': max_combo,
+                'average_combo': round(avg_combo, 1)
+            }
         }

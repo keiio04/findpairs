@@ -1,0 +1,24 @@
+# Python temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+backend/__pycache__/
+
+# Database (sensitive info / local testing data)
+backend/database.db
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large media (optional - if you want to keep audio/images local)
+# audio/*.mp3

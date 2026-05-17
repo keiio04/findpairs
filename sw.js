@@ -3,7 +3,7 @@
    FIXED: no force reload issue, proper update system
 ══════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'flipmatch-v1.0.1'; // 🔥 change this when updating
+const CACHE_VERSION = 'flipmatch-v1.0.3'; // 🔥 Updated version to force reload
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
@@ -11,6 +11,8 @@ const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/dashboard.html',
+  '/auth.html',
   '/offline.html',
   '/style.css',
   '/script.js',
@@ -33,7 +35,12 @@ self.addEventListener('install', event => {
 
   event.waitUntil(
     caches.open(STATIC_CACHE).then(cache => {
-      return cache.addAll(APP_SHELL);
+      // Robust caching: try to cache each asset individually
+      return Promise.allSettled(
+        APP_SHELL.map(url => {
+          return cache.add(url).catch(err => console.warn(`[SW] Skip caching (Not Found): ${url}`));
+        })
+      );
     }).then(() => {
       self.skipWaiting(); // activate immediately
     })
@@ -55,6 +62,42 @@ self.addEventListener('activate', event => {
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Handle Push Notifications
+self.addEventListener('push', (event) => {
+    let data = { title: 'Flip & Match', body: 'New monsters have appeared!' };
+    
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data = { title: 'Flip & Match', body: event.data.text() };
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: '/player.jpg',
+        badge: '/enemy.png',
+        vibrate: [100, 50, 100],
+        data: {
+            dateOfArrival: Date.now(),
+            primaryKey: '2'
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Handle Notification Clicks
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.openWindow('/')
+    );
 });
 
 /* ════════════════════════════════════
