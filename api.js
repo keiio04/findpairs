@@ -6,13 +6,17 @@
     const isLocalhost = Boolean(
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '' ||
+        window.location.protocol === 'file:' ||
         window.location.hostname.startsWith('192.168.') ||
+        window.location.hostname.startsWith('172.') ||
         window.location.hostname.startsWith('10.') ||
-        window.location.hostname.endsWith('.local')
+        window.location.hostname.endsWith('.local') ||
+        window.location.hostname !== 'findpairss.onrender.com'
     );
 
     const API_BASE_URL = isLocalhost
-        ? `http://${window.location.hostname}:5000/api/v1`
+        ? `http://${window.location.hostname || 'localhost'}:5000/api/v1`
         : 'https://findpairss.onrender.com/api/v1';
 
     class FlipMatchAPI {
@@ -113,7 +117,9 @@
         }
 
         async saveGameResult(gameData) {
+            console.log("[saveGameResult] Attempting to save game result:", gameData);
             if (!this.token) {
+                console.warn("[saveGameResult] No authentication token found. Game saved locally to pending_game_sync.");
                 // Store locally if not logged in
                 let pendingGames = JSON.parse(localStorage.getItem('pending_game_sync') || '[]');
                 pendingGames.push(gameData);
@@ -128,8 +134,15 @@
                     body: JSON.stringify(gameData)
                 });
                 const data = await response.json();
-                return response.ok ? { success: true, message: data.message } : { success: false, error: data.error };
+                if (response.ok) {
+                    console.log("[saveGameResult] Successfully saved to remote database:", data);
+                    return { success: true, message: data.message };
+                } else {
+                    console.error("[saveGameResult] Server returned an error:", data.error);
+                    return { success: false, error: data.error };
+                }
             } catch (error) {
+                console.error("[saveGameResult] Network error trying to connect to server:", error);
                 // Store locally if network fails
                 let pendingGames = JSON.parse(localStorage.getItem('pending_game_sync') || '[]');
                 pendingGames.push(gameData);

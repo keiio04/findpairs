@@ -4,7 +4,7 @@ A Filipino Horror-themed memory battle game built as a Progressive Web App (PWA)
 
 ---
 
-## 💀 Features
+## Features
 - **Turn-based Combat**: Match pairs of cards to damage the enemy or heal yourself.
 - **Folklore Bestiary**: Face off against 5 stages of terror (Aswang, Tiyanak, and more).
 - **Survival Mechanics**: Manage your HP, build combos, and earn XP to level up.
@@ -14,7 +14,7 @@ A Filipino Horror-themed memory battle game built as a Progressive Web App (PWA)
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 - **Frontend**: Vanilla HTML5, CSS3 (Modern Aesthetic), JavaScript (ES6+).
 - **Backend**: Python (Flask API).
 - **Security**: Bcrypt hashing, AES-256 (Fernet) Encryption, JWT (JSON Web Tokens).
@@ -23,7 +23,7 @@ A Filipino Horror-themed memory battle game built as a Progressive Web App (PWA)
 
 ---
 
-## 🚀 How to Run (Setup Guide)
+## How to Run (Setup Guide)
 
 ### 1. Clone the Repository
 ```bash
