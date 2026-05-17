@@ -12,7 +12,7 @@
         window.location.hostname.startsWith('172.') ||
         window.location.hostname.startsWith('10.') ||
         window.location.hostname.endsWith('.local') ||
-        window.location.hostname !== 'findpairss.onrender.com'
+        !window.location.hostname.includes('onrender.com')
     );
 
     const API_BASE_URL = isLocalhost
