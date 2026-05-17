@@ -12,7 +12,7 @@
     );
 
     const API_BASE_URL = isLocalhost
-        ? 'http://localhost:5000/api/v1'
+        ? `http://${window.location.hostname}:5000/api/v1`
         : 'https://findpairss.onrender.com/api/v1';
 
     class FlipMatchAPI {

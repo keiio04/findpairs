@@ -5,7 +5,7 @@
 *A Centralized Horror-Themed Memory Battle System*
 
 ## Team Members
-[Insert Name/s Here]
+**Crisostomo · Guevarra · Lacopia**
 
 ## Target Client/Industry
 **Entertainment & Education (Philippine Folklore Awareness)**
