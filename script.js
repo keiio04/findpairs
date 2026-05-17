@@ -188,7 +188,7 @@ function playProceduralDeathSnd() {
 ════════════════════════════════════════════ */
 const STAGES = [
   {
-    id: 1, name: 'The Dark Night', color: 'var(--stage-1)', emoji: '🌑',
+    id: 1, name: 'The Haunted Balete', color: 'var(--stage-1)', emoji: '🌑',
     pairs: 6, gridCols: 4, maxHP: 100, aiMaxHP: 100,
     aiAccuracy: 0.25, aiMemory: 4, timeLimit: 0,
     comboBase: 10, missDmg: 10, aiMissDmg: 10,
@@ -207,7 +207,7 @@ const STAGES = [
     ]
   },
   {
-    id: 2, name: 'The Dark Night', color: 'var(--stage-2)', emoji: '🦇',
+    id: 2, name: 'Blood Moon Wilderness', color: 'var(--stage-2)', emoji: '🦇',
     pairs: 6, gridCols: 4, maxHP: 100, aiMaxHP: 100,
     aiAccuracy: 0.45, aiMemory: 6, timeLimit: 50,
     comboBase: 12, missDmg: 10, aiMissDmg: 10,
@@ -227,7 +227,7 @@ const STAGES = [
     ]
   },
   {
-    id: 3, name: 'The Dark Night', color: 'var(--stage-3)', emoji: '🌊',
+    id: 3, name: "Siren's Deep Trench", color: 'var(--stage-3)', emoji: '🌊',
     pairs: 6, gridCols: 4, maxHP: 100, aiMaxHP: 100,
     aiAccuracy: 0.65, aiMemory: 10, timeLimit: 90,
     comboBase: 14, missDmg: 10, aiMissDmg: 10,
@@ -248,7 +248,7 @@ const STAGES = [
     ]
   },
   {
-    id: 4, name: 'The Dark Night', color: 'var(--stage-4)', emoji: '🌲',
+    id: 4, name: 'Labyrinth of the Lost', color: 'var(--stage-4)', emoji: '🌲',
     pairs: 12, gridCols: 4, maxHP: 100, aiMaxHP: 100,
     aiAccuracy: 0.82, aiMemory: 18, timeLimit: 120,
     comboBase: 18, missDmg: 10, aiMissDmg: 10,
@@ -271,7 +271,7 @@ const STAGES = [
     ]
   },
   {
-    id: 5, name: "The Dark Night", color: 'var(--stage-5)', emoji: '👁️',
+    id: 5, name: "Bakunawa's Eclipse", color: 'var(--stage-5)', emoji: '👁️',
     pairs: 16, gridCols: 4, maxHP: 100, aiMaxHP: 100,
     aiAccuracy: 0.95, aiMemory: 28, timeLimit: 150,
     comboBase: 24, missDmg: 10, aiMissDmg: 10,
