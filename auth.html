@@ -305,10 +305,46 @@
                 transform: rotate(360deg);
             }
         }
+
+        .auth-volume-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--bone);
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.45;
+            filter: grayscale(0.7) brightness(0.7);
+        }
+        .auth-volume-btn:hover {
+            transform: scale(1.1);
+            opacity: 0.9;
+            filter: grayscale(0) brightness(1.1) drop-shadow(0 0 6px #ffcc33);
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+            50% { transform: scale(1.08); opacity: 0.7; filter: grayscale(0.4) brightness(0.8) drop-shadow(0 0 6px rgba(255, 0, 0, 0.7)); }
+            100% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+        }
+        .auth-volume-btn.pulsing {
+            animation: pulseGlow 1.8s infinite ease-in-out;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Sound Toggle Button -->
+    <button id="authVolumeBtn" class="auth-volume-btn pulsing" onclick="toggleAuthMusic()">🔇</button>
+
     <div class="bg-pentagram">⛧</div>
     <div class="drops" id="drops"></div>
 
@@ -522,6 +558,16 @@
             const result = await gameAPI.login(id, pass);
 
             if (result.success) {
+                // Keep the ambient welcome music playing at a slightly lower backing volume during loading
+                if (typeof authMusic !== 'undefined') {
+                    try { authMusic.volume = 0.22; } catch(err) {}
+                }
+                
+                // Play procedural bat screech & horror swoop sound effect
+                if (typeof playSpookyTransitionSound === 'function') {
+                    playSpookyTransitionSound();
+                }
+
                 // Clear old game data to ensure fresh start for new user
                 localStorage.removeItem('flipmatch_progress');
                 localStorage.removeItem('flipmatch_stats');
@@ -647,6 +693,147 @@
             }
         }
         window.addEventListener('DOMContentLoaded', spawnDrops);
+
+        // Immersive Welcome Soundtrack for Authentication Screen
+        const authMusic = new Audio('audio/welcome.mp3');
+        authMusic.loop = true;
+        authMusic.volume = 0.45; // Subtle background level
+
+        const playAuthMusic = () => {
+            try {
+                authMusic.play().then(() => {
+                    const btn = document.getElementById('authVolumeBtn');
+                    if (btn) {
+                        btn.textContent = '🔊';
+                        btn.classList.remove('pulsing');
+                    }
+                }).catch(error => {
+                    registerAuthFallback();
+                });
+            } catch (err) {
+                registerAuthFallback();
+            }
+        };
+
+        const registerAuthFallback = () => {
+            const btn = document.getElementById('authVolumeBtn');
+            if (btn) btn.classList.add('pulsing');
+
+            const playOnGesture = () => {
+                try {
+                    authMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.warn('Gesture play blocked:', e));
+                } catch (e) {}
+            };
+            document.addEventListener('click', playOnGesture, { once: true });
+            document.addEventListener('touchstart', playOnGesture, { once: true });
+        };
+
+        // Attempt playback on load
+        playAuthMusic();
+
+        // Procedural Audio: Atmospheric Chilling Wind, Abyssal Sub-Boom, and Folklore Spirit Wail
+        function playSpookyTransitionSound() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AC();
+                if (ctx.state === 'suspended') {
+                    ctx.resume().catch(() => {});
+                }
+                
+                // 1. Ghostly Howling Void (White Noise sweep)
+                const bufferSize = ctx.sampleRate * 3.0; // 3 seconds
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noiseNode = ctx.createBufferSource();
+                noiseNode.buffer = buffer;
+
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.Q.setValueAtTime(12, ctx.currentTime);
+                noiseFilter.frequency.setValueAtTime(350, ctx.currentTime);
+                noiseFilter.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 1.0);
+                noiseFilter.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 3.0);
+
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.01, ctx.currentTime);
+                noiseGain.gain.linearRampToValueAtTime(0.24, ctx.currentTime + 0.4);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.0);
+
+                noiseNode.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noiseNode.start();
+
+                // 2. Sub-bass Portal Slam (Deep Cinematic Impact)
+                const subOsc = ctx.createOscillator();
+                subOsc.type = 'sine';
+                subOsc.frequency.setValueAtTime(75, ctx.currentTime);
+                subOsc.frequency.exponentialRampToValueAtTime(22, ctx.currentTime + 2.0);
+
+                const subGain = ctx.createGain();
+                subGain.gain.setValueAtTime(0.001, ctx.currentTime);
+                subGain.gain.linearRampToValueAtTime(0.45, ctx.currentTime + 0.12);
+                subGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.0);
+
+                subOsc.connect(subGain);
+                subGain.connect(ctx.destination);
+                subOsc.start();
+                subOsc.stop(ctx.currentTime + 3.0);
+
+                // 3. Spooky Folklore Spirit Wail (Hollow Haunting Moan)
+                const ghostOsc = ctx.createOscillator();
+                ghostOsc.type = 'triangle';
+                ghostOsc.frequency.setValueAtTime(180, ctx.currentTime);
+                ghostOsc.frequency.linearRampToValueAtTime(320, ctx.currentTime + 0.7);
+                ghostOsc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 2.8);
+
+                const ghostFilter = ctx.createBiquadFilter();
+                ghostFilter.type = 'lowpass';
+                ghostFilter.frequency.setValueAtTime(550, ctx.currentTime);
+
+                const ghostGain = ctx.createGain();
+                ghostGain.gain.setValueAtTime(0.001, ctx.currentTime);
+                ghostGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.5);
+                ghostGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.8);
+
+                ghostOsc.connect(ghostFilter);
+                ghostFilter.connect(ghostGain);
+                ghostGain.connect(ctx.destination);
+                ghostOsc.start();
+                ghostOsc.stop(ctx.currentTime + 2.8);
+
+            } catch (e) {
+                console.warn('[Audio] Failed to build procedural sound:', e);
+            }
+        }
+
+        function toggleAuthMusic() {
+            const btn = document.getElementById('authVolumeBtn');
+            if (!authMusic) return;
+            try {
+                if (authMusic.paused) {
+                    authMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.log(e));
+                } else {
+                    authMusic.pause();
+                    if (btn) {
+                        btn.textContent = '🔇';
+                    }
+                }
+            } catch(e) {}
+        }
     </script>
 </body>
 

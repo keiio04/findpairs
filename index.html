@@ -159,9 +159,45 @@
             90% { opacity: 0.8; }
             100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
         }
+
+        .auth-volume-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--bone);
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.45;
+            filter: grayscale(0.7) brightness(0.7);
+        }
+        .auth-volume-btn:hover {
+            transform: scale(1.1);
+            opacity: 0.9;
+            filter: grayscale(0) brightness(1.1) drop-shadow(0 0 6px #ffcc33);
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+            50% { transform: scale(1.08); opacity: 0.7; filter: grayscale(0.4) brightness(0.8) drop-shadow(0 0 6px rgba(255, 0, 0, 0.7)); }
+            100% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+        }
+        .auth-volume-btn.pulsing {
+            animation: pulseGlow 1.8s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
+    <!-- Sound Toggle Button -->
+    <button id="welcomeVolumeBtn" class="auth-volume-btn pulsing" onclick="toggleWelcomeMusic()">🔇</button>
+
     <div id="offlineBar">Offline Mode — Game saves to your device automatically</div>
     <div class="drops" id="drops"></div>
     <div class="vignette"></div>
@@ -181,7 +217,7 @@
         <a href="auth.html" class="enter-btn">Begin Journey</a>
     </div>
 
-    <footer>ITEL 305 — TECHNICAL PROJECT DEFENSE ⛧ 2026<br>Crisostomo · Guevarra · Lacopia</footer>
+    <footer>3WMAD 3 — FINAL PROJECT ⛧ 2026<br>Crisostomo · Guevarra · Lacopia</footer>
 
     <script src="pwa.js?v=1"></script>
     <script>
@@ -208,17 +244,63 @@
         const welcomeMusic = new Audio('audio/welcome.mp3');
         welcomeMusic.loop = true;
         welcomeMusic.volume = 0.5;
-        
-        // Subukang i-autoplay agad
-        let playPromise = welcomeMusic.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Kung na-block ng browser ang autoplay, maghihintay siya ng kahit anong click sa screen
-                document.body.addEventListener('click', () => {
-                    welcomeMusic.play().catch(e => console.log(e));
-                }, { once: true });
-            });
+
+        const playWelcomeMusic = () => {
+            try {
+                welcomeMusic.play().then(() => {
+                    const btn = document.getElementById('welcomeVolumeBtn');
+                    if (btn) {
+                        btn.textContent = '🔊';
+                        btn.classList.remove('pulsing');
+                    }
+                }).catch(err => {
+                    registerIndexFallback();
+                });
+            } catch (err) {
+                registerIndexFallback();
+            }
+        };
+
+        const registerIndexFallback = () => {
+            const btn = document.getElementById('welcomeVolumeBtn');
+            if (btn) btn.classList.add('pulsing');
+
+            const playOnGesture = () => {
+                try {
+                    welcomeMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.warn('Gesture play blocked:', e));
+                } catch (e) {}
+            };
+            document.addEventListener('click', playOnGesture, { once: true });
+            document.addEventListener('touchstart', playOnGesture, { once: true });
+        };
+
+        function toggleWelcomeMusic() {
+            const btn = document.getElementById('welcomeVolumeBtn');
+            if (!welcomeMusic) return;
+            try {
+                if (welcomeMusic.paused) {
+                    welcomeMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.log(e));
+                } else {
+                    welcomeMusic.pause();
+                    if (btn) {
+                        btn.textContent = '🔇';
+                    }
+                }
+            } catch(e) {}
         }
+
+        // Attempt playback on load
+        playWelcomeMusic();
     </script>
 </body>
 </html>

@@ -885,8 +885,8 @@ body::after {
 }
 
 .fighter-avatar img {
-  width: clamp(85px, 16vw, 130px);
-  height: clamp(85px, 16vw, 130px);
+  width: clamp(95px, 18vw, 140px);
+  height: clamp(95px, 18vw, 140px);
   object-fit: cover;
   object-position: center top;
   border-radius: 10px;
@@ -903,10 +903,6 @@ body::after {
 .fighter.enemy .fighter-avatar img {
   border: 2px solid var(--ai-clr);
   box-shadow: 0 0 12px rgba(231,76,60,0.4), 0 0 4px rgba(0,0,0,0.8);
-  /* Ginawang mas malaki ang kalaban */
-  width: clamp(100px, 20vw, 160px);
-  height: clamp(100px, 20vw, 160px);
-  transform: scale(1.05);
   transition: all 0.3s ease;
 }
 

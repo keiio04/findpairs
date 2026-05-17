@@ -151,11 +151,65 @@
             font-family:'Cinzel Decorative',serif; font-size:0.6rem;
             color:#ff9944; letter-spacing:0.1em; text-transform:uppercase;
         }
+
+        /* Drops / Particles */
+        .drops {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; overflow: hidden;
+        }
+        .drop {
+            position: absolute; top: -20px;
+            animation: fall linear infinite;
+            opacity: 0.6; font-family: 'Cinzel Decorative', serif;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+
+        .auth-volume-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--bone);
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.45;
+            filter: grayscale(0.7) brightness(0.7);
+        }
+        .auth-volume-btn:hover {
+            transform: scale(1.1);
+            opacity: 0.9;
+            filter: grayscale(0) brightness(1.1) drop-shadow(0 0 6px #ffcc33);
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+            50% { transform: scale(1.08); opacity: 0.7; filter: grayscale(0.4) brightness(0.8) drop-shadow(0 0 6px rgba(255, 0, 0, 0.7)); }
+            100% { transform: scale(1); opacity: 0.35; filter: grayscale(0.7) brightness(0.6) drop-shadow(0 0 1px rgba(255, 0, 0, 0.3)); }
+        }
+        .auth-volume-btn.pulsing {
+            animation: pulseGlow 1.8s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
+    <!-- Sound Toggle Button -->
+    <button id="welcomeVolumeBtn" class="auth-volume-btn pulsing" onclick="toggleWelcomeMusic()">🔇</button>
+
     <!-- PWA Offline Bar -->
     <div id="offlineBar">Offline Mode — Game saves to your device automatically</div>
+    <div class="drops" id="drops"></div>
 
     <div class="vignette"></div>
     <div class="bg-pentagram">⛧</div>
@@ -173,9 +227,91 @@
         <a href="auth.html" class="enter-btn">Begin Journey</a>
     </div>
 
-    <footer>ITEL 305 — Technical Project Defense ⛧ 2026</footer>
+    <footer>3WMAD 3 — Final Project ⛧ 2026</footer>
 
     <!-- PWA Scripts for Offline Awareness -->
     <script src="pwa.js?v=1"></script>
+    <script>
+        function spawnDrops() {
+            const c = document.getElementById('drops');
+            if (!c) return;
+            c.innerHTML = '';
+            const syms = ['🩸', '·', '∘', '⛧', '✦', '*', '♱'];
+            for (let i = 0; i < 35; i++) {
+                const d = document.createElement('div');
+                d.className = 'drop'; d.textContent = syms[Math.floor(Math.random() * syms.length)];
+                d.style.left = Math.random() * 100 + 'vw';
+                d.style.fontSize = (0.4 + Math.random() * 0.9) + 'rem';
+                d.style.animationDuration = (12 + Math.random() * 18) + 's';
+                d.style.animationDelay = '-' + (Math.random() * 15) + 's';
+                const colors = ['rgba(180,0,0,0.4)', 'rgba(220,50,50,0.3)', 'rgba(120,120,120,0.3)'];
+                d.style.color = colors[Math.floor(Math.random() * colors.length)];
+                c.appendChild(d);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', spawnDrops);
+
+        // Welcome Music Logic
+        const welcomeMusic = new Audio('audio/welcome.mp3');
+        welcomeMusic.loop = true;
+        welcomeMusic.volume = 0.5;
+
+        const playWelcomeMusic = () => {
+            try {
+                welcomeMusic.play().then(() => {
+                    const btn = document.getElementById('welcomeVolumeBtn');
+                    if (btn) {
+                        btn.textContent = '🔊';
+                        btn.classList.remove('pulsing');
+                    }
+                }).catch(err => {
+                    registerWelcomeFallback();
+                });
+            } catch (err) {
+                registerWelcomeFallback();
+            }
+        };
+
+        const registerWelcomeFallback = () => {
+            const btn = document.getElementById('welcomeVolumeBtn');
+            if (btn) btn.classList.add('pulsing');
+
+            const playOnGesture = () => {
+                try {
+                    welcomeMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.warn('Gesture play blocked:', e));
+                } catch (e) {}
+            };
+            document.addEventListener('click', playOnGesture, { once: true });
+            document.addEventListener('touchstart', playOnGesture, { once: true });
+        };
+
+        function toggleWelcomeMusic() {
+            const btn = document.getElementById('welcomeVolumeBtn');
+            if (!welcomeMusic) return;
+            try {
+                if (welcomeMusic.paused) {
+                    welcomeMusic.play().then(() => {
+                        if (btn) {
+                            btn.textContent = '🔊';
+                            btn.classList.remove('pulsing');
+                        }
+                    }).catch(e => console.log(e));
+                } else {
+                    welcomeMusic.pause();
+                    if (btn) {
+                        btn.textContent = '🔇';
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Attempt playback on load
+        playWelcomeMusic();
+    </script>
 </body>
 </html>

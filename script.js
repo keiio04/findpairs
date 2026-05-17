@@ -11,11 +11,27 @@ bgMusic.volume = 0.5;
 bgMusic.preload = 'auto';
 document.body.appendChild(bgMusic);
 
-function getAC() { if (!actx) actx = new AC(); if (actx.state === 'suspended') actx.resume(); return actx; }
+function getAC() {
+  try {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) actx = new AC();
+    }
+    if (actx && actx.state === 'suspended') {
+      actx.resume().catch(() => {});
+    }
+    return actx;
+  } catch (e) {
+    console.warn("[AudioContext] Blocked or unsupported:", e);
+    return null;
+  }
+}
 
 function tone(freq, type, dur, gain = 0.28, delay = 0) {
   try {
-    const c = getAC(), o = c.createOscillator(), g = c.createGain();
+    const c = getAC();
+    if (!c) return; // Exit gracefully if AudioContext is blocked
+    const o = c.createOscillator(), g = c.createGain();
     o.connect(g); g.connect(c.destination); o.type = type;
     o.frequency.setValueAtTime(freq, c.currentTime + delay);
     o.frequency.exponentialRampToValueAtTime(freq * 0.5, c.currentTime + delay + dur);
@@ -27,7 +43,9 @@ function tone(freq, type, dur, gain = 0.28, delay = 0) {
 }
 function noise(dur, bpFreq = 1200, gain = 0.3) {
   try {
-    const c = getAC(), buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate), d = buf.getChannelData(0);
+    const c = getAC();
+    if (!c) return; // Exit gracefully if AudioContext is blocked
+    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * gain;
     const src = c.createBufferSource(), g = c.createGain(), f = c.createBiquadFilter();
     f.type = 'bandpass'; f.frequency.value = bpFreq;
@@ -53,23 +71,41 @@ const SFX = {
 };
 
 function startMusic() {
+  // 1. Play the standard background MP3 music first (highly robust, doesn't depend on AudioContext)
   try {
-    const c = getAC(); musicNodes = [];
-    const notes = [55, 73.4, 82.5, 110];
-    notes.forEach(freq => {
-      const o = c.createOscillator(), g = c.createGain();
-      const lfo = c.createOscillator(), lg = c.createGain();
-      lfo.frequency.value = 0.04 + Math.random() * 0.07; lg.gain.value = freq * 0.012;
-      lfo.connect(lg); lg.connect(o.frequency);
-      o.type = 'sine'; o.frequency.value = freq;
-      o.connect(g); g.connect(c.destination); g.gain.value = 0.035;
-      lfo.start(); o.start(); musicNodes.push(o, g, lfo, lg);
+    bgMusic.play().then(() => {
+      musicPlaying = true;
+      const btnGame = document.getElementById('musicBtnGame');
+      const btnTitle = document.getElementById('titleMusicBtn');
+      if (btnGame) btnGame.textContent = '🔊';
+      if (btnTitle) btnTitle.textContent = '🔊 Music';
+    }).catch((err) => {
+      console.warn("Background music play failed:", err);
     });
-    musicPlaying = true;
-    bgMusic.play().catch(() => { });
-    document.getElementById('musicBtnGame').textContent = '🔊';
-    document.getElementById('titleMusicBtn').textContent = '🔊 Music';
   } catch (e) { }
+
+  // 2. Synthesize the Web Audio synth layers in a separate block so that failures here don't block the MP3
+  try {
+    const c = getAC();
+    if (c) {
+      // Clear existing nodes first to prevent duplicates
+      musicNodes.forEach(n => { try { n.stop && n.stop(); n.disconnect && n.disconnect(); } catch (err) { } });
+      musicNodes = [];
+      
+      const notes = [55, 73.4, 82.5, 110];
+      notes.forEach(freq => {
+        const o = c.createOscillator(), g = c.createGain();
+        const lfo = c.createOscillator(), lg = c.createGain();
+        lfo.frequency.value = 0.04 + Math.random() * 0.07; lg.gain.value = freq * 0.012;
+        lfo.connect(lg); lg.connect(o.frequency);
+        o.type = 'sine'; o.frequency.value = freq;
+        o.connect(g); g.connect(c.destination); g.gain.value = 0.035;
+        lfo.start(); o.start(); musicNodes.push(o, g, lfo, lg);
+      });
+    }
+  } catch (e) {
+    console.warn("Web Audio synth layers failed:", e);
+  }
 }
 
 function stopMusic() {
@@ -84,6 +120,67 @@ function stopMusic() {
 
 function toggleMusic() {
   if (musicPlaying) { stopMusic(); } else { startMusic(); }
+}
+
+function stopOverlayMusic() {
+  if (window.currentOverlayMusic) {
+    try {
+      window.currentOverlayMusic.pause();
+      window.currentOverlayMusic.currentTime = 0;
+    } catch (e) { }
+    window.currentOverlayMusic = null;
+  }
+  if (window.proceduralHeartbeatTimeout) {
+    clearTimeout(window.proceduralHeartbeatTimeout);
+    window.proceduralHeartbeatTimeout = null;
+  }
+}
+
+function playProceduralDeathSnd() {
+  stopOverlayMusic();
+  const c = getAC();
+  let beatCount = 0;
+  const maxBeats = 5;
+
+  function playBeat() {
+    if (isGameOver && document.getElementById('loseOverlay').classList.contains('active')) {
+      // Lub-dub procedural heartbeat
+      tone(72, 'sine', 0.15, 0.45, 0);
+      tone(56, 'sine', 0.15, 0.35, 0.02);
+
+      tone(67, 'sine', 0.18, 0.4, 0.2);
+      tone(51, 'sine', 0.18, 0.3, 0.22);
+
+      beatCount++;
+      if (beatCount < maxBeats) {
+        const nextDelay = 800 + (beatCount * 250); // Becomes slower: 800ms, 1050ms, 1300ms, 1550ms
+        window.proceduralHeartbeatTimeout = setTimeout(playBeat, nextDelay);
+      } else {
+        // Flatline drone
+        setTimeout(() => {
+          if (isGameOver && document.getElementById('loseOverlay').classList.contains('active')) {
+            try {
+              const osc = c.createOscillator();
+              const gain = c.createGain();
+              osc.connect(gain);
+              gain.connect(c.destination);
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(320, c.currentTime);
+              gain.gain.setValueAtTime(0.12, c.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 4.5);
+              osc.start();
+              osc.stop(c.currentTime + 4.5);
+
+              // Spirit wind rumble
+              tone(42, 'sawtooth', 3.5, 0.28, 0.4);
+              noise(4.0, 280, 0.16);
+            } catch (e) { }
+          }
+        }, 1200);
+      }
+    }
+  }
+  playBeat();
 }
 
 /* ════════════════════════════════════════════
@@ -437,12 +534,19 @@ function setLore(text, delay = 0) { /* Lore system disabled */ }
    SCREEN MANAGEMENT
 ════════════════════════════════════════════ */
 function showScreen(id) {
+  stopOverlayMusic();
   closePanel(); // Auto-close side panel on navigation
   closeMobileMenu(); // Auto-close mobile menu on navigation
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.full-overlay').forEach(o => o.classList.remove('active'));
-  if (id === 'titleScreen') renderTitleScreen();
+  if (id === 'titleScreen') {
+    renderTitleScreen();
+    // Resume lobby/ambient music if enabled
+    if (musicPlaying) {
+      bgMusic.play().catch(() => { });
+    }
+  }
 }
 
 function toggleMobileMenu() {
@@ -639,6 +743,7 @@ function renderTitleScreen() {
    START STAGE
 ════════════════════════════════════════════ */
 function startStage(idx) {
+  stopOverlayMusic();
   curStageIdx = idx; curStage = STAGES[idx];
   resetBattleState();
   showScreen('gameScreen');
@@ -654,7 +759,10 @@ function startStage(idx) {
   document.getElementById('aiName').textContent = `${curStage.aiTitle.toUpperCase()}`;
 
   const aiImg = document.getElementById('aiAvatarImg');
-  if (aiImg) aiImg.style.borderColor = curStage.boss ? 'var(--gold)' : 'var(--ai-clr)';
+  if (aiImg) {
+    aiImg.src = `enemy_stage${curStage.id}.png?v=${Date.now()}`;
+    aiImg.style.borderColor = curStage.boss ? 'var(--gold)' : 'var(--ai-clr)';
+  }
   document.body.classList.toggle('boss-stage', !!curStage.boss);
 
   document.getElementById('playerHpMax').textContent = `/ ${playerMaxHP}`;
@@ -1247,6 +1355,10 @@ function endGame(result, customMsg = '') {
   if (isGameOver) return;
   isGameOver = true; stopTimer(); locked = true;
 
+  // STOP regular music and Web Audio oscillators immediately
+  stopMusic();
+  stopOverlayMusic();
+
   // SAVE TO LOCAL HISTORY (Fallback)
   const resultData = {
     stage_id: curStage.id,
@@ -1277,6 +1389,16 @@ function endGame(result, customMsg = '') {
 
   if (result === 'win') {
     SFX.win(); stats.wins++;
+    
+    // Play mystical welcome.mp3 as the victory overlay background theme
+    try {
+      const winTheme = new Audio('audio/welcome.mp3');
+      winTheme.loop = true;
+      winTheme.volume = 0.45;
+      winTheme.play().catch(() => { });
+      window.currentOverlayMusic = winTheme;
+    } catch(e) {}
+
     if (!missedThisGame) stats.perfectWin = true;
     if (curStage.boss) stats.bossKilled = true;
     if (curStage.id > stats.highestStage) stats.highestStage = curStage.id;
@@ -1303,6 +1425,10 @@ function endGame(result, customMsg = '') {
     document.getElementById('winOverlay').classList.add('active');
   } else {
     SFX.lose();
+    
+    // Play chilling procedural death heartbeat flatline & rumbling wind
+    playProceduralDeathSnd();
+
     document.getElementById('loseSubtitle').textContent = customMsg || `The ${curStage.aiTitle} has prevailed…`;
     document.getElementById('loseStats').innerHTML = `
       <div class="ov-stat"><div class="ov-stat-val">${moves}</div><div class="ov-stat-label">Moves</div></div>
@@ -1459,4 +1585,25 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
   spawnDrops();
   renderTitleScreen();
+
+  // Premium Auto-play lobby background ambient sound on first user action
+  const playTitleMusic = () => {
+    if (!musicPlaying && !isGameOver) {
+      startMusic();
+    }
+  };
+  document.body.addEventListener('click', playTitleMusic, { once: true });
+  document.body.addEventListener('touchstart', playTitleMusic, { once: true });
+
+  // Global click/touch event listener to resume AudioContext dynamically on user interaction
+  const resumeAC = () => {
+    try {
+      const c = getAC();
+      if (c && c.state === 'suspended') {
+        c.resume().catch(() => {});
+      }
+    } catch(e) {}
+  };
+  document.addEventListener('click', resumeAC, { capture: true, passive: true });
+  document.addEventListener('touchstart', resumeAC, { capture: true, passive: true });
 });

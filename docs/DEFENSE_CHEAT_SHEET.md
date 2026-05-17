@@ -1,6 +1,4 @@
-# 🛡️ Defense Cheat Sheet: Flip & Match
 
-## 1. Quick Start (Do this first!)
 1. Open VS Code.
 2. Open Terminal 1: `cd backend` then `python app.py` (Runs on port 5000)
 3. Open Terminal 2: `python -m http.server 8080` (Runs on port 8080)
