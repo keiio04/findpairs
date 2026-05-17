@@ -401,21 +401,50 @@ document.addEventListener('DOMContentLoaded', () => {
    TOAST
 ════════════════════════════════════ */
 function pwaToast(msg, duration = 3200) {
-  const old = document.getElementById('pwaToastEl'); if (old) old.remove();
-  const el = document.createElement('div');
-  el.id = 'pwaToastEl'; el.textContent = msg;
-  el.style.cssText = `
-    position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;
-    transform:translateX(-50%);z-index:1200;
-    background:rgba(0,0,0,0.93);border:1px solid rgba(139,0,0,0.5);
-    border-radius:8px;padding:10px 20px;color:#e8d5b0;
-    font-family:'Cinzel Decorative',serif;font-size:0.58rem;
-    letter-spacing:0.08em;text-align:center;white-space:nowrap;
-    max-width:90vw;overflow:hidden;text-overflow:ellipsis;
-    animation:fadeInUp 0.3s ease both;
+  const old = document.getElementById('pwaToastContainer'); if (old) old.remove();
+  
+  const container = document.createElement('div');
+  container.id = 'pwaToastContainer';
+  container.style.cssText = `
+    position: fixed;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1200;
+    pointer-events: none;
   `;
-  document.body.appendChild(el);
-  setTimeout(() => { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 350); }, duration);
+
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `
+    background: rgba(0,0,0,0.93);
+    border: 1px solid rgba(139,0,0,0.5);
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #e8d5b0;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap;
+    max-width: 90vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: auto;
+    animation: fadeInUp 0.3s ease both;
+  `;
+
+  container.appendChild(el);
+  document.body.appendChild(container);
+  
+  setTimeout(() => {
+    container.style.transition = 'opacity 0.3s';
+    container.style.opacity = '0';
+    setTimeout(() => container.remove(), 350);
+  }, duration);
 }
 
 /* ════════════════════════════════════
